@@ -1,0 +1,69 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+setwd('/Users/gearoidlacey/Documents/College/Masters/Data Analytics')
+
+library('tidyverse')
+```
+
+Like most languages, R can directly perform calculations.
+
+```{r}
+40*32/8
+```
+
+You can create objects using *<-* (assignment operator). <- is the recommended assignment operator in R.
+
+```{r}
+my_variable <- 2
+my_variable
+```
+
+In terms of variable names, R is the same as most languages where the variable name must start with a letter and can contain numbers and .'s. Generally the errors in most languages are quite informative for these mistakes.
+
+The tab key can be used for auto-complete of statements.
+
+```{r}
+seq(1,10)
+```
+
+Pressing the keys alt + shift + k will display keyboard shortcuts
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
