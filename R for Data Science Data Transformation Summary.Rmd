@@ -1,0 +1,226 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+setwd('/Users/gearoidlacey/Documents/College/Masters/Data Analytics')
+
+library(tidyverse)
+
+install.packages('nycflights13')
+library(nycflights13)
+```
+
+To explore the dplyr package which is part of tidyverse we will use the flights dataframe which is part of the nycfligths13 package which contains the details of approx 330,000 flights departing from New York city.
+
+```{r}
+flights
+
+View(flights)
+```
+
+The first line of code prints the dataframe in a slightly different format. That is because its a *tibble*. Tibbles are dataframes that are slightly altered to work better with tidyverse.
+
+The second line of code shows the whole dataset in a clearer format (In my opinion). It opens the data in a table.
+
+Note the data type under each column name which represents the data type of the column.
+
+*int*: integers
+*db*: double/floating point numbers
+*chr*: character vectors/strings
+*lgl*: logical i.e. True/False
+*fctr*: factor i.e. categorical
+*date*: date
+*dttm*: datetime values
+
+The *filter()* function allows the user subset a dataframe based on a value(s). The first argument passed is the name of the dataframe you intend to filter followed by the column(s) you intend to filter by.
+
+
+```{r}
+filter(flights, month == 1, day == 2)
+```
+
+dplyr executes the filter command. dplyr functions **do not** make changes to the original dataframe therefore if you want to keep the result of the filter command you need to assign it to an object.
+
+```{r}
+jan2 <- filter(flights, month == 1, day == 2)
+jan2
+```
+
+If you wrap the entire first line in brackets it will print the jan2 dataframe without having to explicitly call it on the next line.
+
+To filter correctly you need to have an understanding of the comparison operators. To avoid reinventing the wheel these can be found at *https://www.tutorialspoint.com/r/r_operators.html* under the heading "Relational Operators".
+
+The same applies for the logical operators which can be found on the same page, but the R for Data Science book gives some fantastic illustrations at *http://r4ds.had.co.nz/transform.html*.
+
+```{r}
+(jan_feb <- filter(flights, month == 1 | month == 2))
+```
+
+The above line of code creates a dataframe consisting of flights from january or febuary. This line of code can be shortened to:
+
+```{r}
+(jan_feb <- filter(flights, month %in% c(1,2)))
+```
+
+NA values can cause havoc in R if they are not catered for. Some functions cannot compute if there are NA values present in the data they are working on.
+
+To check if a variable is NA, use the *is.na(x)* function. Filter excludes NA values.
+
+The *between* operator allows us to specify a range of values to filter by.
+
+```{r}
+df <- filter(flights, between(dep_time, 517, 520))
+df
+```
+
+We can order rows using the *arrange()* function. Missing values (NA) are always sorted at the end.
+
+```{r}
+(arrange(flights, month,day,dep_time)) #orders the specified columns in ascending order
+
+(arrange(flights, desc(dep_time))) #orders the specified column in descending order
+```
+
+If we want to extract particular columns from the dataframe and store them in a new dataframe we can use the *select()* command.
+
+```{r}
+(select(flights, month, day)) #selects the specified columns
+
+(select(flights, month : arr_time)) #selects the all the columns between the specified column names (inclusive) 
+
+(select(flights, -(month : arr_time) )) #selects the all the columns except the specified column names (inclusive) 
+
+```
+
+You can rename columns using select but its recommended that you use the *rename()* function as select will drop all variables that are not mentioned.
+
+The syntax for the rename function is: rename(dataframe, new_column_name = old_column_name)
+
+```{r}
+?dplyr::rename
+(rename(flights, "arrival time" = arr_time ))
+```
+
+If you want to force certain columns to the front of the dataframe you can use the *everything()* function within the select function.
+
+```{r}
+(select(flights, arr_time, dep_time, everything() ))
+```
+
+To select columns by a substring use the *contains()* function within the select function.
+
+```{r}
+select(flights, contains("arr"))
+```
+
+If we want to create new columns based on functions of existing columns we use the *mutate()* function. Mutated columns are added onto the end of the dataframe. So if you want them at the front its a perfect use case for the everything function.
+
+```{r}
+flights_sml <- select(flights, 
+  year:day, 
+  ends_with("delay"), 
+  distance, 
+  air_time
+)
+ ((mutate(flights_sml, arr_delay - dep_delay)))
+
+
+```
+
+If you only want to keep the mutated column and not the rest of the columns, use the *transmute()* function.
+
+```{r}
+((transmute(flights_sml, arr_delay - dep_delay)))
+```
+
+**Note: Mutate takes vectors as input and returns the output as a vector**
+
+The *summarise()* function summarises an entire dataframe column in one row. For example the mean distance is:
+
+```{r}
+summarise(flights, mean(distance, na.rm = TRUE))
+```
+
+The summarise function is more useful when its used with the *group_by()* function. This changes the unit of analysis from the complete dataset to individual groups. Therefore any dplyr functions applied to the data is actually applied to each group individually.
+
+Grouped summaries are one of the most used tools.
+
+```{r}
+by_day <- group_by(flights, month, day, dep_time)
+summarise(by_day, mean(distance))
+```
+
+Another handy feature in R is the pipe operator *%>%*. Using the pipe operator means we don't have to continuously assign the result of a transformation to a variable for use in the next operation.
+
+```{r}
+delays <- flights %>%
+  group_by(dest)%>%
+  summarise(
+    count = n(),
+     dist = mean(distance, na.rm = TRUE),
+    delay = mean(arr_delay, na.rm = TRUE)
+  ) %>% 
+  filter(count > 20, dest != "HNL")
+    
+
+delays
+```
+
+What happens in this code is the flight dataframe is grouped by destination, the result of this is passed to the summarise function to create 3 summaries which are then passed to the filter function.
+
+Without the %>% we would have to assign the results of each operation to a variable for use elsewhere.
+
+Lets look at the na.rm parameter.
+
+```{r}
+flights %>%
+  group_by(year, month, day) %>%
+  summarise(mean = mean(dep_delay))
+```
+
+As previously mentioned some functions cannot compute if there are values missing as displayed above so we provide the na.rm attribute which removes the NA values before generating the mean.
+
+```{r}
+flights %>%
+  group_by(year, month, day) %>%
+  summarise(mean = mean(dep_delay, na.rm = TRUE))
+```
+
+As you can see we now have a mean for each group. When aggregating it is recommended that you provide a count (**n()** gives a count of the values in a group) or a count of the non NA values **sum(!is.na(x))**. This will prevent you having a false understandings of what is happening behind the scences.
+
+```{r}
+not_cancelled <- flights %>%
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+
+delays <- not_cancelled %>%
+  group_by(tailnum) %>%
+  summarise(
+    delay = mean(arr_delay)
+  )
+
+ggplot(data = delays, mapping = aes(x = delay)) + 
+  geom_freqpoly(binwidth = 10)
+```
+
+This plot is not giving us the full story though. Lets plot the number of flights vs. average delay.
+
+```{r}
+delays <- not_cancelled %>%
+  group_by(tailnum) %>%
+  summarise(
+    delay = mean(arr_delay, na.rm = TRUE),
+    n = n()
+  )
+
+ggplot(data = delays, mapping = aes(x = n, y = delay)) + 
+  geom_point(alpha = 1/10)
+```
+
+Grouping is most useful with the summarise function. It is also possible to do some interesting operations with mutate and filter
+
+```{r}
+
+```
+
