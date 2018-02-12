@@ -68,7 +68,7 @@ NA values can cause havoc in R if they are not catered for. Some functions canno
 
 To check if a variable is NA, use the *is.na(x)* function. Filter excludes NA values.
 
-The *between* operator allows us to specify a range of values to filter by.
+The *between* operator allows us to specify a range of values to filter by (inclusive).
 
 ```{r}
 df <- filter(flights, between(dep_time, 517, 520))
@@ -103,9 +103,10 @@ The syntax for the rename function is: rename(dataframe, new_column_name = old_c
 (rename(flights, "arrival time" = arr_time ))
 ```
 
-If you want to force certain columns to the front of the dataframe you can use the *everything()* function within the select function.
+If you want to force certain columns to the front of the dataframe you can use the *everything()* function within the select function. This will then select the two columns you want at the front followed by everything eles.
 
 ```{r}
+?everything
 (select(flights, arr_time, dep_time, everything() ))
 ```
 
@@ -188,7 +189,7 @@ flights %>%
   summarise(mean = mean(dep_delay, na.rm = TRUE))
 ```
 
-As you can see we now have a mean for each group. When aggregating it is recommended that you provide a count (**n()** gives a count of the values in a group) or a count of the non NA values **sum(!is.na(x))**. This will prevent you having a false understandings of what is happening behind the scences.
+As you can see we now have a mean for each group. When aggregating it is recommended that you provide a count (**n()** gives a count of the values in a group) or a count of the non NA values **sum(!is.na(x))**. This will prevent you having a false understanding of what is happening behind the scences.
 
 ```{r}
 not_cancelled <- flights %>%
