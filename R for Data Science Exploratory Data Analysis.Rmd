@@ -42,7 +42,7 @@ This shows the information the graph is based on. A variable is continuous (norm
 ggplot(data = diamonds) + geom_histogram(mapping = aes(x=carat), binwidth = 0.5)
 ```
 
-Again this information can be got manually.
+Again this information can be got manually. The binwidth parameter groups the carats into .5 intervals. As you can see from the graph the interval starts at roughly -.25, so the first bin is all the diamonds with a carat of -.25 up to .25
 
 ```{r}
 diamonds %>%
@@ -56,7 +56,7 @@ Therefore the first range starts at -.25 up to .25 carats. The next range is .25
 A histogram divides the x axis into evenly space bins then uses the height of the bar to diplay information. You should always experiment with the value of the *bin_width* parameter as the height of the bars will depend on this.
 
 ```{r}
-ggplot(data = diamonds) + geom_histogram(mapping = aes(x = carat), binwidth = 0.1)
+ggplot(data = diamonds) + geom_histogram(mapping = aes(x = carat, colour = cut), binwidth = 0.1)
 ```
 
 As the bin_width has changed, so has the height of the bars. The *default number of bins is 30*, but this is overwritten when the bin_width is changed.
@@ -86,7 +86,7 @@ ggplot(data = diamonds) + geom_histogram(mapping = aes(x = y), binwidth = 0.5) +
   coord_cartesian(ylim = c(0,50))
 ```
 
-ggplot also has *xlim* and *ylim* attributs but the work different in that they remove the values outside the limits as opposed to just zooming in.
+ggplot also has *xlim* and *ylim* attributes but they work different in that they remove the values outside the limits as opposed to just zooming in.
 
 As we can see from the graph there are 3 unusual values, 0, approximately 30 and approximately 60. We can now filter to look at these values specifically
 
@@ -100,7 +100,7 @@ diamonds %>%
 
 From this we can see that the two diamonds that were above 30 in the y variable are considered ideal and premium. Diamonds cannot have a width of 0 mm so those values are incorrect. A y value of 58mm is nearly 2 inches long which would seem highly unusual.
 
-To combat missing values its generally best to keep the data all together for as long as possible and treat removing values as the last option. A good option to avoid removing values is to use to mutate function to copy to "bad" data into a new column but replace the bad values with NA using the *ifelse* function.
+To combat missing values its generally best to keep the data all together for as long as possible and treat removing values as the last option. A good option to avoid removing values is to use the mutate function to copy to "bad" data into a new column but replace the bad values with NA using the *ifelse* function.
 
 ```{r}
 (diamonds2 <- diamonds %>%
@@ -145,7 +145,7 @@ We could use the freqpoly geom but its harder to distinguish the smaller groups.
 ggplot(data = diamonds) + geom_freqpoly(mapping = aes(x = price, colour = cut), binwidth = 500)
 ```
 
-As the counts differ so much hard to see if any covariation exists. Therefore we need to change the y axis to density.
+As the counts differ so much it is hard to see if any covariation exists. Therefore we need to change the y axis to density.
 
 ```{r}
 ggplot(data = diamonds, mapping = aes(x = price, y = ..density..)) + geom_freqpoly(mapping = aes(colour = cut), binwidth = 500)
@@ -159,7 +159,7 @@ The boxplot is often used as it provides so much information in one plot i.e the
 ggplot(data = diamonds, mapping = aes(x = cut, y = price, colour = cut)) + geom_boxplot()
 ```
 
-This plot also says that better quality diamonds are cheaper which is intresting? The points above each of the plots are 1.5 times away from the IQR. These points are considered unusual so they are plotted individually. The top end of each of the lines protruding from the plots indicates where the last non-outlier point.
+This plot also says that better quality diamonds are cheaper which is intresting? The points above each of the plots are 1.5 times away from the IQR. These points are considered unusual so they are plotted individually. The top end of each of the lines protruding from the plots indicates where the last non-outlier point is.
 
 As you can see the categorical variables are in order but this wont always be the case. If this is not the case use the *reorder()* function.
 
@@ -178,7 +178,7 @@ If the labels on the x axis were very long we could use the coord_flip() functio
 ggplot(data = mpg, mapping = aes(x = reorder(class, hwy, median), y = hwy)) + geom_boxplot() + coord_flip()
 ```
 
-Next we will look at covariation between to categorical variables. So if theres categorical variables on the x and y axis we need to get a count for each observation.
+Next we will look at covariation between two categorical variables. So if theres categorical variables on the x and y axis we need to get a count for each observation.
 
 ```{r}
 ggplot(data = diamonds, mapping = aes(x = cut, y = color)) + geom_count()
