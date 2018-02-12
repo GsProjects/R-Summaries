@@ -1,0 +1,78 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library('tidyverse')
+```
+
+Most functions in the R for Data Science book use tibbles. You can convert a tibble to a dataframe using the *as_tibble()*.
+
+```{r}
+as_tibble(iris)
+```
+
+You can also create a tibble manually by supplying each column with a vector. In this case the y column implements the recycling rule.
+
+```{r}
+tibble(
+  x = 1:5,
+  y = 1,
+  z = x ^ 2 + y
+)
+```
+
+Column names in a tibble do not have to conform to the general naming conventions if they are surrounded by back ticks.
+
+```{r}
+tibble(
+  `:)` = 1:5,
+  `_1_` = 1,
+  `.1.` = `:)` ^ 2 +  `_1_`
+)
+```
+
+Tibbles can also be created using the *tribble()* function which stands for transposed tibble. This is used for data entry. The code below will explain it better than I could. 
+
+```{r}
+tribble(
+  ~x, ~y, ~z,
+  "a", 1, 2,
+  "b", 3, 4
+)
+```
+
+Notice the column names start with the formula (~) character. Tibbles and dataframes differ in two main ways: **printing and subsetting**. Print is more refined for tibbles as it only prints the first 10 rows and as many columns as it can fit on one screen. Printing can be controlled by the parameters n (representing the number of rows) and width (representing the number of cloumns)
+
+```{r}
+nycflights13::flights %>% 
+  print(n = 10, width = Inf)
+```
+
+This can be changed using the *options()* function. There are more ways to extract data from a data frame using the following operators: *$* or *[[ ]]*. $ extracts by name, [[ ]] extracts by name **OR** position. 
+
+If you want to use the data frame in a pipe you need to use the *.* placholder.
+
+```{r}
+df <- tibble(
+  x = runif(5),
+  y = rnorm(5)
+)
+
+df$x
+
+df[[1]]
+
+df[['y']]
+
+df %>%
+  .$x
+```
+
+
+
+```{r}
+
+```
+
