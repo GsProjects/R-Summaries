@@ -1,0 +1,229 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This chapter will look at the readr package which is part of tidyverse. There are many different read functions most of which we will not cover but by now you should have the necessary tools to get information on each function.
+
+```{r}
+library('tidyverse')
+```
+
+The dataset I am going to use is based on irish nct results (same thing as MOT in Britain I think). The dataset can be found at: *https://data.gov.ie/dataset/2016-make-model-year-failures-at-nct*. I downloaded the csv file as pdf can be difficult to work with.
+
+```{r}
+(results <- read_csv('Make Model Data 2016 (2).csv'))
+```
+
+As you can see this is not how we expected the data to be read in. The reason for this is the first five rows of the file are for headers and descriptions so we want to skip these rows.
+
+```{r}
+(results <- read_csv('Make Model Data 2016 (2).csv',  skip=5))
+```
+
+This looks better but the Column names are automatically generated and not very informative as we have skipped the headers. To counteract this we tell the read_csv() that we want to take the column names from the first row and then skip 5 rows and start reading the data.
+
+```{r}
+(results <- read_csv('Make Model Data 2016 (2).csv', col_names = TRUE, skip=5))
+```
+
+If you look at the R console is has displayed the name and column type for each column. You can also use the *comment* parameter to drop all lines starting with a particular string e.g. comment = '#' drops all rows starting with a #.
+
+It is also possible to create an inline csv file in numerous ways.
+
+```{r}
+read_csv("a,b,c
+         1,2,3
+         4,5,6")
+
+read_csv("a,b,c\n 1,2,3\n 4,5,6")
+
+read_csv("1,2,3\n 4,5,6", col_names = c('a','b','c'))
+```
+
+You can also specify what values are to be represented by NA.
+
+```{r}
+read_csv("1,2,3\n 4,5,6", col_names = c('a','b','c'), na='4')
+```
+
+Theres many reasons to use readr over base R functions. The book states *"they don’t convert character vectors to factors, use row names, or munge the column names"*.
+
+Vectors are an important aspect of R. The *parse_*() are a series of functions that convert character vectors to logical, integer or date vectors.
+
+```{r}
+str(parse_logical( c('TRUE','FALSE','NA')))
+
+str(parse_integer( c('1','2','3')))
+str(parse_date( c("2010-01-01", "1979-10-14")))
+```
+
+These functions are an important part of the readr package. The parse function takes a character vector as one parameter and the value of na as another parameter (i.e. what values are to be represented with NA)
+
+```{r}
+parse_integer(c("1", "231", ".", "456"), na = ".")
+```
+
+If parsing fails you will be alerted and the failed values **will not** be displayed in the output.
+
+Parsing numbers (decimal numbers) can be difficult as some countries represent decimals as 10.2 or 10,2. Also numbers can be in terms of percentages so they will contain extra characters e.g. 10%. Numbers often contain "grouping character" e.g. 1,000,000.
+
+To address the first problem readr usings a parameter called "locale" which is used to specify the decimal point
+
+```{r}
+parse_double('1,00', locale = locale(decimal_mark = ','))
+```
+
+To address extra characters e.g. % parse_number() simply ignores them.
+
+To address the grouping character, you use the locale object to specify the grouping character.
+
+```{r}
+parse_number("20%")
+
+parse_number("123'456'789", locale = locale(grouping_mark = "'"))
+
+```
+
+Parsing strings is also not as straight forward as it may seem as there are different types of character encodings. The default character encoding in readr is UTF-8. readr assumes your data is UTF-8 when it reads it.
+
+The function *charToRaw()* converts characters to hexadecimal numbers.
+
+To counteract encoding issues, parse_character's locale parameter allows you to specify the encoding.
+
+```{r}
+charToRaw("Hello World")
+
+x1 <- "El Ni\xf1o was particularly bad this year"
+
+parse_character(x1, locale = locale(encoding = "Latin1"))
+```
+
+Sometimes you will not know what the best encoding option is. Luckily readr provides a *guess_encoding()*. Lets guess the encoding of the nct csv file. The more text you provide the guess_encoding() function, the more accurate the guess will be.
+
+```{r}
+guess_encoding('Make Model Data 2016 (2).csv')
+```
+
+In terms of factors, the *parse_factor()* function expects a vector of known levels as well as a vector of unseen values to compare against. If an unseen value is not a level in the factor an error is generated
+
+```{r}
+fruits <- c('apple','banana')
+parse_factor(c('apple','banana','oranges'), levels = fruits)
+```
+
+The section of the book on parsing dates and times is quite thorough so I recommend that you read it there. Its section 11.3.4 at *http://r4ds.had.co.nz/data-import.html*.
+
+To parse files readr looks at the first 1000 rows of each column and uses a heuristic to determine the best column type. You can observe this by using the *guess_parser()* function to guess the type of a column and use *parse_guess()* to parse the column with that guess.
+
+```{r}
+guess_parser(results$VehicleMake)
+```
+
+When looking at the column VehicleMake from the results dataframe (which we created earlier) the guessed column type is character.
+
+To determine the column type the heuristic tries the following things according to the authors:
+  "The heuristic tries each of the following types, stopping when it finds a match:
+
+      logical: contains only “F”, “T”, “FALSE”, or “TRUE”.
+      integer: contains only numeric characters (and -).
+      double: contains only valid doubles (including numbers like 4.5e-5).
+      number: contains valid doubles with the grouping mark inside.
+      time: matches the default time_format.
+      date: matches the default date_format.
+      date-time: any ISO8601 date.
+      
+    If none of these rules apply, then the column will stay as a vector of strings."
+    
+There is potential for problems when guessing the type as it only looks at the first 1000 rows which may contain bad data.
+
+```{r}
+challenge <- read_csv(readr_example("challenge.csv"))
+
+problems(challenge)
+```
+
+This message tells us that we are expected integers but getting trailing characters meaning decimal numbers. To adjust this specify the data type the column should be parsed by.
+
+```{r}
+challenge <- read_csv(readr_example("challenge.csv"), col_types = cols(
+    x = col_double(),
+    y = col_character()
+    )
+  )
+
+tail(challenge)
+```
+
+Now the x column is fixed but the y column which stores dates is parsed as a character vector.
+
+```{r}
+challenge <- read_csv(readr_example("challenge.csv"), col_types = cols(
+    x = col_double(),
+    y = col_date()
+    )
+  )
+
+tail(challenge)
+```
+
+Every parse_^ function has a corresponding col_^ function.
+
+*You use parse_^ when the data is in a character vector in R **already** *
+
+*You use col_^ when your reading in the data using readr*
+
+If you want the heurestic to look at more rows of data use the guess_max parameter
+
+```{r}
+challenge <- read_csv(readr_example("challenge.csv"), guess_max = 1001)
+
+problems(challenge)
+```
+
+As you can see increasing the number of rows by one fixed the problems in this case.
+
+Sometimes you may want to read in all the columns as character vectors so you can manually parse them.
+
+```{r}
+(challenge <- read_csv(readr_example('challenge.csv'), col_types = cols(
+  .default = col_character()
+)))
+```
+
+As you can see this is not ideal as it reads the dates as NA values. You can supply the n_max parameter to read_csv which specifies how many rows to read.
+
+The *write_csv* and *write_tsv* functions both encode the data as UTF-8 and encode date-times as ISO-8601.
+
+To export a csv file to excel use *write_export_csv()*
+
+```{r}
+write_csv(challenge, 'challenge.csv')
+
+```
+
+R provides a binary storage format called feathers (which is similar to pickles in python) which provide quicker read/write operations. Feather files are usable with other programming languages whereas the other binary format RDS is only for R.
+
+```{r}
+#install.packages('feather')
+library(feather)
+
+write_feather(challenge, 'challenge.feather')
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
