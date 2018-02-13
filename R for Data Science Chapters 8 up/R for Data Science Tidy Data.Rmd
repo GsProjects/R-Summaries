@@ -1,0 +1,150 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+There are three rules that make a dataset "tidey":
+    1. Each variable has its own column.
+    2. Each observations has its own row.
+    3. Each value has its own cell.
+    
+So really your data should be in a structured tabular format. This makes working with the data easier. It also allows for R's efficiency with vectors to show as each column is a vector. (Remember the mutate and summary functions work with vectors!)
+
+Also most packages are structured to work with tidy data.
+
+```{r}
+library(tidyverse)
+?dplyr::count(wt)
+```
+
+Data is normally untidy as it has been organised to make data entry as easy as possible. Therefore you will have to do some preprocessing of the data.
+
+Generally this means getting the data into the format of points 1 and 2 above.
+
+To fix these use the two most important functions in tidyr, *spread()* and *gather()*.
+
+A common problem is where column names are actually values of a variable not the name of a variable.
+
+```{r}
+(table_data <- read_csv("Afghanistan,   745,   2666,
+     Brazil,  37737,  80488,
+     China, 212258, 213766" ,  col_names = c('Country', '1999', '2000')))
+
+```
+
+As you can see in this case the last two column names are years. But the years are actually variable values and also represent two observations for two different years.
+
+To fix this, we will use the gather function to gather the column names into a pair of variables.
+
+```{r}
+table_data %>%
+  gather('1999', '2000', key = 'year', value = 'cases')
+```
+
+What we have done here is, we told the gather function that the columns labelled 1999 and 2000 are actually values not varibales names. We then tell the gather function that these values are associated with the year variable and that each of the values in the original dataframe is a case for that year.
+
+Therefore we have 2 observations for each country. For those of you from the python world think of key value pairs when doing this operation.
+
+The spread() function is the opposite of gathering. Use this function when an observation is scattered accross multiple rows.
+```{r}
+table2
+```
+
+As you can see it would be better if cases and population were columns.
+
+```{r}
+spread(table2, key = type, value = count)
+```
+
+With the spread function we tell it the dataframe we want to fix, the column whose values are to be converted to columns (the key parameter) and what values each of those new columns will get.
+
+What about if a column contains two variables like the rate column in table3.
+
+```{r}
+table3
+```
+
+As you can see the rate column contains the cases and population variable. To fix this use the *separate()* function. The separate function takes the name of the column to separate and a vector of column names to separate it into.
+
+The function will automatically split on non numeric characters but you can provide a sep argument. Also by default the separate function leaves the column type as is so if you add the Convert = TRUE parameter it will fix this. 
+
+```{r}
+table3 %>%
+  separate(rate, into = c('Cases','Population'))
+
+
+table3a <- table3 %>%
+  separate(rate, into = c('Cases','Population'), convert = TRUE)
+```
+
+*Unite()* is the opposite of separate which joins columns together.
+
+```{r}
+?unite
+table3a %>%
+  unite(col='rate', sep='/', c('Cases', 'Population'))
+```
+
+As you can see we have now combined the cases and population columns into one column called rate.
+
+Data can be missing in two ways:
+    1. Represented by NA
+    2. Not present in the dataset at all
+    
+Lets use the example from the book for this.
+
+```{r}
+stocks <- tibble(
+  year   = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  qtr    = c(   1,    2,    3,    4,    2,    3,    4),
+  return = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+```
+
+There are two values missing, the obvious one is the NA value in the return vector. The other value thats missing is quarter 1 for 2016.
+
+```{r}
+stocks
+
+stocks %>%
+  spread(year, return) # so we make the years columns and give each year its return as a value
+
+stocks %>%
+  spread(year, return) %>% # so we make the years columns and give each year its return as a value
+  gather(year, return, '2015':'2016', na.rm = TRUE) # if the na values are not important create a column called year which takes the column names 2015 and 2016 and makes them variables and removes rows with NA values.
+```
+
+The second representation shows you explicitly which values are missing. Another function which makes missing values explicit is the *complete()* function.
+
+This function works by taking a set of columns and finding all the unique pairs. It then fills missing values with NA
+
+```{r}
+stocks 
+
+stocks %>%
+  complete(year,qtr)
+```
+
+The last tool for missing data is the *fill()* function. The function works by taking a set of columns where you want missing values to be filled with the last observation.
+
+```{r}
+stocks %>%
+  fill(return)
+```
+
+As you can see I have opted to fill any missing values in the return column with the value before it. In this case the return value for quarter 4 in 2015 was missing but is now populated with the value before it.
+
+
+Lets have a summary of the major functions:
+
+  gather(): takes a new column name, the column names you want to be treated as values and it takes the column you               want to map those values to.
+  
+  spread(): takes a column name whose values you want to be treated as seperate columns. It also takes the column you             want your new columns to be mapped to 
+  
+  separate(): separates a column where each observation contains two variables into two seperate columns
+  
+  unite(): exact oposite of separate.
+  
+  complete(): give it two column names, it finds all the unique pairs and gives them an NA value where necessary
+  
+  fill(): if an observation has an NA value it fills it with the previous value.
