@@ -1,0 +1,189 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Relational data: multiple tables of data.
+
+Relations are defined between a pair of tables.
+
+There are 3 types of joins when working with relational data:
+    1. Mutating joins: add new variables to one data frame from matching observations in another.
+    2. Filtering joins: filter observations from 1 data frame based on whether or not they match observations in another.
+    3. Set operations: treat observations as if they are set elements
+    
+    
+```{r}
+library(tidyverse)
+library(nycflights13)
+```
+
+The nycflights package has four tables. Section 13.2 shows how the tables relate to each other.
+
+```{r}
+airlines
+airports
+planes
+weather
+
+```
+
+The variables used to connect each table are called keys. Keys are used to uniquely identify observations. There are 2 types of keys:
+    1. Primary key: used to uniquely identify an observation in its own table.
+    2. Foreign key: used to uniquely identify observations in other tables.
+    
+When you've identified the primary keys in each table, verify it by taking a count of the primary keys.
+
+```{r}
+planes %>%
+  count(tailnum) %>%
+  filter(n > 1)
+
+weather %>%
+  count(year,month, day ,hour, origin) %>%
+  filter(n > 1)
+
+airports %>%
+  count(faa) %>%
+  filter(n > 1)
+
+airlines %>%
+  count(carrier) %>%
+  filter(n > 1)
+```
+
+If a table does not have a primary key you can add one using *mutate()* and *row_number()*
+
+```{r}
+?row_number
+```
+
+Mutating joins allow us add variables from one table to another where the observation keys match.
+Create a smaller dataset to see how this works.
+
+```{r}
+flights2 <- flights %>% 
+  select(year:day, hour, origin, dest, tailnum, carrier)
+flights2
+```
+
+Lets combine the airlines and flights2 dataframe so flights2 contains the airline name. This can be done 2 ways. The select statement removes the origin and dest columns from the dataframe.
+
+```{r}
+flights2 %>%
+  select(-origin, -dest) %>%
+  left_join(airlines, by = 'carrier')
+
+?dplyr::mutate
+flights2 %>%
+  select(-origin, -dest) %>%
+  mutate(name = airlines$name[match(carrier, airlines$carrier)])
+```
+
+There are multiple types of mutating joins. If you are familiar with joins in SQL databases this section will be relatively straigthforward.
+
+Inner-join: matches observations where the keys are equal. Therefore unmatched joins are not included in the result.
+
+Outer-join: keeps observations that appear in **at least 1 of the tables.** There are 3 types of outer joins:
+    1. Left join: keeps all observations in x and observations that match in y.
+    2. Right join: keeps all observations in y and observations that match in x.
+    3. Full join: keeps all observations in x and y.
+
+```{r}
+x <- tribble(
+  ~key, ~val_x,
+     1, "x1",
+     2, "x2",
+     3, "x3"
+)
+y <- tribble(
+  ~key, ~val_y,
+     1, "y1",
+     2, "y2",
+     4, "y3"
+)
+
+x %>%
+  inner_join(y, by ='key')
+
+x %>%
+  right_join(y, by ='key')
+
+x %>%
+  left_join(y, by ='key')
+
+x %>%
+  full_join(y, by ='key')
+```
+
+I encourage you to look at the graphic the authors provide in section 13.4 of the book.
+
+**Note when you join on duplicate keys in two tables you key all possible results of that join.**
+
+You dont have to specify what column you want to join by. If you dont specify, R will join on all columns that match between both tables as illustrated below
+
+```{r}
+flights %>%
+  left_join(weather)
+
+
+flights %>%
+  left_join(airports, by = c('dest' = 'faa'))
+```
+
+The second join works by joining on the dest and faa columns but only the dest column is displayed in the result.
+
+The *merge()* function in the base package does the same thing as the aforementioned joins.
+
+Filtering joins match observations the same way as mutating joins but affect the observations not the variables. There are two types of filtering joins:
+
+    1.Semi joins: **keep** all the observations in x that have a matching key in y
+    2.Anti join: **drops** all the observations in x that have a matching key in y
+    
+I suggest looking at the book for this section. Lets move onto set operations which are self explained.
+
+```{r}
+df1 <- tribble(
+  ~x, ~y,
+   1,  1,
+   2,  1
+)
+df2 <- tribble(
+  ~x, ~y,
+   1,  1,
+   1,  2
+)
+
+intersect(df1,df2)
+
+union(df1,df2)
+
+setdiff(df1,df2)
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
