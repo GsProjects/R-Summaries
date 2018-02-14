@@ -1,0 +1,94 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+To work with strings we will need to use the *stringr* library
+
+```{r}
+library(tidyverse)
+library(stringr)
+```
+
+You can wrap strings in double or single quotes (" or '). As I primarily use python, I tend to use single quotes.
+
+If you forget to close a quote you will see a plus sign on the left which is generally the case when R expects something its not getting. If this happens press the escape key, fix your code and run it again.
+
+```{r}
+(string1 <- "uses double quotes")
+(string2 <- 'uses single quotes')
+```
+
+To include a " or a ' in the string put a backslash before it. (Appologies for the incorrect gramatical example!)
+
+```{r}
+(string3 <- 'uses single quote\'s')
+```
+
+The printed representation of a string is not the same as the raw representation of a string as the printed representation shows the escape characters.
+
+```{r}
+string4 <- '\''
+string4
+
+writeLines(string4)
+```
+
+As you can see the first representation shows the string wrapped in quotes whereas the second representation only shows the string itself.
+
+Base R has string functions but they are inconsistent so use stringr. All stringr functions start with *str_*.
+
+Two useful functions when working with strings: getting the string length (*str_length*) and concatenating strings (*str_c*).
+
+```{r}
+str_length('This is R programming')
+
+str_c('Hello', 'world', sep =' ')
+```
+
+You can collapse a vector of strings into one string.
+
+```{r}
+str_c('H', 'e', 'l', 'l', 'o', collapse = TRUE)
+```
+
+To get a substring use the *str_sub()* function. You specify the string you want to substring as well as the start and end positions of the substring
+
+```{r}
+string5 <- 'This is R programming'
+
+str_sub(string5, 11,17)
+```
+
+Regular expressions allow you define patterns in strings. Lets match a parameter in a string using the *str_view()* function.
+
+```{r}
+strings <- str_split(string5, pattern = ' ')
+str_view(strings, "ram")
+```
+
+Regular expressions can be hard to get your head around so I suggest reading the book for the extensive section it has on it.
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
