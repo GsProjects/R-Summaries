@@ -1,0 +1,222 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Factors are used to represent categorical variables. To work with factors we will use the *forcats* package
+
+```{r}
+library(tidyverse)
+library(forcats)
+```
+
+Using a character strings to represent factors is not good as they sort differently and there are the possibilities for spelling mistakes when inputting data.
+
+To create a factor you need to supply a known list of levels. You then make factors based on the levels.
+
+```{r}
+x1 <- c("Dec", "Apr", "Jan", "Mar")
+
+
+x2 <- c("Dec", "Apr", "Jam", "Mar") # notice jan is spelled incorrectly
+
+
+month_levels <- c(
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+)
+
+(some_months <- factor(x1, levels = month_levels))
+```
+
+As you can see some_months is now converted to a vector of factors from a vector of strings. Now when you go to sort some_months it will put the months in order to match the order of the levels.
+
+```{r}
+sort(some_months)
+```
+
+Any values that are not in the supplied levels are converted to NA.
+
+```{r}
+(some_months2 <- factor(x2, levels = month_levels))
+```
+
+As you can see Jam is converted to NA as it is not a level. If you wanted to get a warning about this use the *parse_factor()* function.
+
+```{r}
+(some_months3 <- parse_factor(x2, levels = month_levels))
+```
+
+For the rest of the chapter the book uses the *forcats::gss_cat* dataset.
+
+```{r}
+?gss_cat
+gss_cat
+```
+
+When factors are stored in a tibble you cant see all the levels so easily, therefore you need to get a count for each factor.
+
+```{r}
+gss_cat %>%
+  count(marital)
+```
+
+This is an easy way to see how a factor is disperesed within a dataset. You could also plot the values.
+
+```{r}
+ggplot(data = gss_cat, mapping=aes(x = race)) +geom_bar()
+```
+
+By default ggplot will drop any variables from the axis that have no values but you can force the x axis to show these values
+
+```{r}
+ggplot(data = gss_cat, mapping=aes(x = race)) +geom_bar() + scale_x_discrete(drop = FALSE)
+```
+
+You often want to change the order of the factors in a graph. Lets reorder each religion in comparison to how many hours of tv the watch.
+
+```{r}
+religions <- gss_cat %>%
+  group_by(relig) %>%
+  summarise(
+    tv = mean(tvhours, na.rm = TRUE),
+    n = n()
+  )
+ggplot(data = religions, mapping = aes(x = tv, y = relig)) + geom_point() 
+  
+```
+
+It can be hard to see a pattern in this data, but if we were to reorder the factors by value e.g. by the median amount of tv each religion watches it may be easier to see a pattern. To do this we reorder the factors using the *fct_reorder()* function which is supplied to the aes function in ggplot. By default it orders them by mean value.
+
+```{r}
+?fct_reorder
+ggplot(data = religions, mapping = aes(x = tv, y = fct_reorder(relig, tv))) + geom_point() 
+ggplot(data = religions, mapping = aes(x = tv, y = fct_reorder(relig, tv, fun= mean))) + geom_point() 
+```
+
+So we reorder the religions by the median amount of tv hours they watch which shows a pattern in the data. When transformations get more complicated it is better to first mutate the transformation to a new column then display it.
+
+```{r}
+religions %>%
+  mutate(ordered_rel = fct_reorder(relig, tv)) %>%
+  ggplot( mapping = aes(tv, y = ordered_rel)) + geom_point()
+```
+
+So lets take a step back and review whats happening here.
+
+  1. We group the gss_cat data by religion so we can get statistical summaries for each type of religion using      the *summarise()* function. The summaries we get are the mean hours of tv watched for each religion and        the number of samples that make up that group.
+  2. Then using this information we pass the new data to ggplot and put the number of hours of tv watched on        the x axis versus the religious category. This resulted in the data points being randomly spread, so there      were no obvious patterns.
+  3. We solve this by using the *fct_reorder()* function in the aes function in ggplot. This function takes the      factor you want to reorder and the values you want to reorder by. By default this function will order by       the median values but it can be changed. In our case we reorder the factors by the median time spent           watching tv which shows us a pattern in the data.
+  4. Ideally we want to keep our visualisation code as simple as possible therefore we mutate the reordered         factors to a new column and base our plot on this new data.
+  
+Below is an example of reordering income by age.
+
+```{r}
+rincome_summary <- gss_cat %>%
+  group_by(rincome) %>%
+  summarise(
+    age = mean(age, na.rm = TRUE),
+    n = n()
+  ) %>%
+  mutate(income_by_age = fct_reorder(rincome, age)) 
+  
+ggplot(data = rincome_summary, mapping = aes(x = age, y = income_by_age)) + geom_point() 
+
+rincome_summary
+```
+
+Sometimes the original order of a factor should not be changed as is the case here. To prevent this we use the *fct_relevel()* function which reverts to the original order but lets us choose which factor to display first.
+
+```{r}
+?fct_relevel
+ggplot(rincome_summary, aes(x = age, y = rincome)) + geom_point()
+
+ggplot(rincome_summary, aes(x = age, fct_relevel(rincome, "Not applicable"))) + geom_point()
+
+```
+
+The first graph shows you the original order. The second graph show you the order when "Not applicable" is moved to the front.
+
+You can also use the *fct_reorder2()* which reorders the factor by the y values associated with the largest x value. The code that shows fct_reorder2() working in the book does not appear to work and is an issue in the unconfirmed errata for the book here: http://www.oreilly.com/catalog/errataunconfirmed.csp?isbn=0636920034407. It is on page 231.
+
+If my understanding is correct it is partially to do with n/sum(n) where n represents a single value but also a column. Therefore you need to change this to n / sum(by_age$n) where you are explicitly differntiating the value and the column. This code will then produce a graph but the proportions do not match.
+
+**When you group_by and then use summarise or functions associated with it, only the sumarised and grouped columns are returned**
+
+```{r}
+by_age <- gss_cat %>%
+  filter(!is.na(age)) %>%
+  group_by(age,marital) %>%
+  count() %>%
+  mutate(prop = n / sum(n))
+  
+
+ggplot(data = by_age, mapping = aes(x = age, y = prop, colour = marital)) + geom_line(na.rm=TRUE)
+
+
+by_age
+
+```
+
+Factors can also be modified using the *fct_recode()* function which allows you to change the levels.
+
+```{r}
+unique(gss_cat$partyid)
+
+gss_cat %>%
+  count(partyid)
+```
+
+As you can see some of the party types are not very descriptive so we can recode them to make them more descriptive.
+
+```{r}
+new_data <- gss_cat %>%
+  mutate(partyid = fct_recode(partyid,
+    "Republican, strong"    = "Strong republican",
+    "Republican, weak"      = "Not str republican",
+    "Independent, near rep" = "Ind,near rep",
+    "Independent, near dem" = "Ind,near dem",
+    "Democrat, weak"        = "Not str democrat",
+    "Democrat, strong"      = "Strong democrat"
+  ))
+
+unique(new_data$partyid)
+```
+
+You can use the *fct_collapse()* to combine multiple existing factors into one factor.
+
+```{r}
+gss_cat %>%
+  mutate(partyid = fct_collapse(partyid,
+    other = c("No answer", "Don't know", "Other party"),
+    republicans = c("Strong republican", "Not str republican"),
+    independents = c("Ind,near rep", "Independent", "Ind,near dem"),
+    democrats = c("Not str democrat", "Strong democrat")
+  )) %>%
+  count(partyid)
+
+```
+
+You may also want to condense the number of factors into a smaller amount using *fct_lump()*.
+
+```{r}
+gss_cat %>%
+  mutate(relig = fct_lump(relig, n=5)) %>%
+  group_by(relig) %>%
+  count()
+```
+
+As you can see this function condenses the factors into 5 categories (really 6 as it excludes 'Other' when doing the operation).
+
+```{r}
+?fct_lump
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
