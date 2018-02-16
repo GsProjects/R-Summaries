@@ -1,0 +1,84 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+To work with dates use the *lubridate* package.
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(nycflights13)
+```
+
+To get the current date use the *today()* or *now()* functions.
+
+```{r}
+today()
+
+now()
+```
+
+You can use the following function to create a date from a string in a specific format.
+
+```{r}
+ymd('2018 February 16')
+
+mdy('February 16 2018')
+
+dmy('16 February 2018')
+
+ymd('20180216')
+```
+
+To create a date-time add _hms to each function name. You can also specify the timezone by using the tz parameter.
+
+```{r}
+ymd_hms('2018-02-16 16:58:00')
+
+ymd_hm('2018-02-16 16:58', tz='GMT')
+```
+
+If the date/datetime is split into different parts use the *make_date()* or *make_datetime()* functions.
+
+```{r}
+flights %>%
+  select(year, month, day, hour, minute) %>%
+  mutate(departure = make_datetime(year, month, day, hour, minute))
+```
+
+The following two code blocks are taken directly from the book where they look at the distribution of departure times.
+
+```{r}
+make_datetime_100 <- function(year, month, day, time) {
+  make_datetime(year, month, day, time %/% 100, time %% 100)
+}
+
+flights_dt <- flights %>% 
+  filter(!is.na(dep_time), !is.na(arr_time)) %>% 
+  mutate(
+    dep_time = make_datetime_100(year, month, day, dep_time),
+    arr_time = make_datetime_100(year, month, day, arr_time),
+    sched_dep_time = make_datetime_100(year, month, day, sched_dep_time),
+    sched_arr_time = make_datetime_100(year, month, day, sched_arr_time)
+  ) %>% 
+  select(origin, dest, ends_with("delay"), ends_with("time"))
+```
+
+
+
+```{r}
+flights_dt %>% 
+  ggplot(aes(dep_time)) + 
+  geom_freqpoly(binwidth = 86400) # 86400 seconds = 1 day
+```
+
+For the rest of this section I would encourage you the read section 16.3 onwards as its more applicable if your doing time series analysis in my opinion.
+
+```{r}
+```
+
+```{r}
+
+```
+

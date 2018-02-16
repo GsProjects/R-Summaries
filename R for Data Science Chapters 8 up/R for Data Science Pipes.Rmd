@@ -1,0 +1,32 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+As previously mentioned the pipe operater *%>%* helps us to stop having to assign the results of each operation to a new variable.
+
+The pipe operator is located in the *magrittr* package which is loaded by default in most of the main packages.
+
+```{r}
+library(magrittr)
+library(nycflights13)
+
+flights %>%
+  group_by(carrier) %>%
+  count(carrier)
+```
+
+Instead of having to assign the result of the grouping to a new object we can use the pipe operator to continue with our analysis.
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
