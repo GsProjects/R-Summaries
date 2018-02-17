@@ -11,22 +11,58 @@ The pipe operator is located in the *magrittr* package which is loaded by defaul
 library(magrittr)
 library(nycflights13)
 
+grouped_flights <- group_by(flights,carrier)
+
+count(grouped_flights, carrier)
+
 flights %>%
   group_by(carrier) %>%
   count(carrier)
 ```
 
-Instead of having to assign the result of the grouping to a new object we can use the pipe operator to continue with our analysis.
+Instead of having to assign the result of the grouping to a new object we can use the pipe operator to continue with our analysis. In the background magrittr basically makes the code we supply into function calls
+
+It is worth noting that when you make a data frame from another data frame R is efficient in terms of memory as it really only stores the different columns between the two.
 
 ```{r}
-
+#install.packages('pryr')
+library(pryr)
+?object.size
+format(object.size(x = flights), units = "auto")
+format(object.size(x = grouped_flights), units = "auto")
+pryr::object_size(grouped_flights, flights)
 ```
 
-```{r}
+As you can see the combined size of the data sets is 42MB. 
 
+Getting back to the pipe operator, there are numerous cases where you should **not** use a pipe.
+
+    1. When there are more than 10 steps. Makes debugging difficult if theres more than 10 steps.
+    2. If you have multiple inputs/outputs.
+    3. Pipes are linear, expressing complex relationships with them will normally give confusing results.
+    
+If your using a pipe and you want to see the result of one of the transformations in you code use *%T>%*.
+
+```{r}
+library(forcats)
+
+gss_cat %>%
+  mutate(relig = fct_lump(relig, n=5)) %>%
+  group_by(relig) %>%
+  count() %T>%
+  plot()
 ```
 
-```{r}
+As you can see we now get the counts for each religion as well as the plot.
 
+If your working with a data structure that does not have a data frame based API e.g. referring to variables in a list, use  * %$% *.
+
+```{r}
+?`%$%`
+
+typeof(mtcars)
+
+mtcars %$%
+  cor(disp, mpg)
 ```
 
