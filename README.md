@@ -1,5 +1,4 @@
-# Data-Analytics
-Data Analytics Module Contents
+# R Summaries
 
 Any files with a commit message beginning with "R for Data Science..." are summaries
 I have made based on the book R for Data Science which has been made available 
